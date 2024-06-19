@@ -30,14 +30,33 @@ session = requests.Session()
 session.headers.update(headers)
 
 
+def get_rnd_proxy():
+    with open('proxies.txt') as file:
+        proxies = [i.strip() for i in file.readlines() if i.strip()]
+    while True:
+        for proxy in proxies:
+            proxy = {'http': f"http://{proxy}", 'https': f"http://{proxy}"}
+            yield proxy
+        yield None
+
+
+Proxy = get_rnd_proxy()
+
+
 def get_my_wallets():
     with open('wallets.txt') as file:
         wallets = [i.strip().lower() for i in file.readlines() if i.strip()]
-    return wallets
+    unique = []
+    for wallet in wallets:
+        if wallet not in unique:
+            unique.append(wallet)
+    return unique
 
 
 def check_wallet(wallet):
     url = f'https://www.layerzero.foundation/api/allocation/{wallet}'
+
+    session.proxies = next(Proxy)
 
     r = session.get(url).json()
 
