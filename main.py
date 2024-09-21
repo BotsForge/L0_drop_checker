@@ -55,12 +55,16 @@ def get_my_wallets():
 
 def check_wallet(wallet):
     url = f'https://www.layerzero.foundation/api/allocation/{wallet}'
+    url = f"https://www.layerzero.foundation/api/proof/{wallet}"
 
     session.proxies = next(Proxy)
 
-    r = session.get(url).json()
+    r = session.get(url)
+    # print(r.text)
+    r = r.json()
+    # print(r)
 
-    if amount := int(r.get('zroAllocation', {}).get('asBigInt', 0)):
+    if amount := int(r.get('amount', 0)):
         amount = round(amount / 10 ** 18, 2)
         logger.success(f"{wallet} --> {amount} ZRO")
     else:
@@ -74,10 +78,18 @@ def main():
     logger.info(f"total wallets = {len(wallets)}")
 
     total = 0
+    amount_good = 0
     for wallet in wallets:
-        total += check_wallet(wallet)
-        sleep(0.1)
+        try:
+            if amount := check_wallet(wallet):
+                total += amount
+                amount_good += 1
 
+        except Exception as er:
+            logger.warning(f"{wallet} --> {er}")
+        # sleep(0.1)
+
+    print(amount_good)
     if total:
         logger.success(f"Total drop amount = {round(total, 2)} ZRO")
     else:
